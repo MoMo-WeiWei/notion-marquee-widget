@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion 神秘調查局終端機跑馬燈</title>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================
+       神秘調查局 • 純淨高解析電子液晶科技風格
+       ========================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: transparent;
+      font-family: 'Share Tech Mono', monospace, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    /* 手持外殼 / 米灰色檔案框 */
+    .dossier-shell {
+      width: 100%;
+      max-width: 680px;
+      border-radius: 8px;
+      padding: 12px 14px 14px 14px;
+      position: relative;
+      transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      background-color: #F7F6F3;
+      border: 1px solid rgba(55, 53, 47, 0.18);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body:not(.force-light) .dossier-shell {
+        background-color: #1A1A18;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+    }
+    body.force-dark .dossier-shell {
+      background-color: #1A1A18;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    body.force-light .dossier-shell {
+      background-color: #F7F6F3;
+      border: 1px solid rgba(55, 53, 47, 0.18);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    /* 外框右上方的控制按鈕列 */
+    .shell-controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .ctrl-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      transition: opacity 0.2s;
+    }
+
+    .dossier-shell .ctrl-btn {
+      color: #37352F;
+      background-color: rgba(55, 53, 47, 0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not(.force-light) .dossier-shell .ctrl-btn {
+        color: #E6EDF3;
+        background-color: rgba(255, 255, 255, 0.08);
+      }
+    }
+    body.force-dark .dossier-shell .ctrl-btn {
+      color: #E6EDF3;
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    body.force-light .dossier-shell .ctrl-btn {
+      color: #37352F;
+      background-color: rgba(55, 53, 47, 0.06);
+    }
+
+    .ctrl-btn:hover { opacity: 0.8; }
+
+    /* 燈泡明暗切換視覺 */
+    #lightbulbIcon {
+      transition: filter 0.3s ease, fill 0.3s ease;
+    }
+    body.force-dark #lightbulbIcon {
+      fill: rgba(230, 237, 243, 0.35);
+    }
+    body.force-light #lightbulbIcon {
+      fill: #F59E0B;
+      filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not(.force-light):not(.force-dark) #lightbulbIcon {
+        fill: rgba(230, 237, 243, 0.35);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      body:not(.force-light):not(.force-dark) #lightbulbIcon {
+        fill: #F59E0B;
+        filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+      }
+    }
+
+    /* 內部黑色電子終端機主卡片 */
+    .widget-card {
+      width: 100%;
+      height: 144px;
+      position: relative;
+      background-color: #0E1112;
+      border: 1px solid #1F292E;
+      color: #00FF66;
+      box-shadow: inset 0 0 16px rgba(0, 255, 102, 0.08);
+      border-radius: 6px;
+      padding: 12px 36px 12px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      image-rendering: pixelated;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .title-icon-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: 'DotGothic16', monospace;
+      font-size: 11px;
+    }
+
+    .badge-motive { background-color: rgba(255, 184, 108, 0.2); color: #FFB86C; border: 1px solid #FFB86C; }
+    .badge-benefit { background-color: rgba(100, 255, 218, 0.2); color: #64FFDA; border: 1px solid #64FFDA; }
+    .badge-final { background-color: rgba(255, 110, 110, 0.2); color: #FF6E6E; border: 1px solid #FF6E6E; }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-family: 'DotGothic16', monospace;
+      text-shadow: 0 0 6px rgba(0, 255, 102, 0.35);
+    }
+
+    .marquee-viewport {
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      z-index: 5;
+      mask-image: linear-gradient(90deg, transparent 0%, #000 3%, #000 97%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 3%, #000 97%, transparent 100%);
+    }
+
+    .marquee-track {
+      display: inline-flex;
+      align-items: center;
+      width: max-content;
+      will-change: transform;
+    }
+
+    .marquee-item {
+      display: inline-flex;
+      align-items: center;
+      font-size: 14px;
+      line-height: 1.4;
+      padding-right: 64px;
+      font-family: 'DotGothic16', monospace;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 6px rgba(0, 255, 102, 0.3);
+    }
+
+    .final-content-view {
+      display: none;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 5;
+      font-size: 14px;
+      font-family: 'DotGothic16', monospace;
+      letter-spacing: 0.06em;
+      white-space: normal;
+      padding: 0 4px;
+      text-shadow: 0 0 8px rgba(255, 110, 110, 0.5);
+    }
+
+    @keyframes popZoom {
+      0% { transform: scale(0.8); opacity: 0; filter: brightness(1); }
+      50% { transform: scale(1.12); opacity: 1; filter: brightness(1.3); }
+      100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+    }
+
+    .pop-highlight {
+      display: inline-block;
+      animation: popZoom 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      background-color: rgba(255, 110, 110, 0.25);
+      color: #FF6E6E;
+      border: 1px dashed rgba(255, 110, 110, 0.6);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: 'DotGothic16', monospace;
+      font-weight: bold;
+    }
+
+    .notion-code {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 2px;
+      padding: 1px 5px;
+      margin: 0 4px;
+      font-size: 13.5px;
+      font-family: 'DotGothic16', monospace;
+      font-weight: 600;
+      white-space: nowrap;
+      background-color: rgba(255, 204, 0, 0.18);
+      color: #FFCC00;
+      border: 1px dashed rgba(255, 204, 0, 0.5);
+      text-shadow: 0 0 5px rgba(255, 204, 0, 0.35);
+    }
+
+    .frag-char {
+      display: inline-block;
+      will-change: transform, opacity, filter;
+    }
+    .is-shattering .notion-code { background-color: transparent !important; border-color: transparent !important; }
+
+    .dust-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .dots-nav {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 10;
+    }
+    .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 0px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background-color: rgba(0, 255, 102, 0.3);
+    }
+    .dot.active { background-color: #00FF66; height: 12px; }
+
+    .progress-bar-wrap {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      overflow: hidden;
+      z-index: 7;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #00FF66;
+    }
+
+    @keyframes textBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .blinking-text {
+      animation: textBlink 1.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dossier-shell" id="dossierShell">
+    
+    <div class="shell-controls">
+      <button id="themeToggleBtn" class="ctrl-btn" title="切換顯示主題">
+        <svg id="lightbulbIcon" width="14" height="14" viewBox="0 0 24 24">
+          <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1z"/>
+        </svg>
+      </button>
+      <button id="restartBtn" class="ctrl-btn">
+        <span>🔄 重新初始化</span>
+      </button>
+    </div>
+
+    <div class="widget-card" id="widgetCard" title="點擊強制轉場，滑鼠移入定格閱讀">
+      <canvas class="dust-canvas" id="dustCanvas"></canvas>
+
+      <!-- 嚴格強制同一行左右對齊（一個在頭、一個在尾，絕不並擠） -->
+      <div style="display: flex; align-items: center; justify-content: space-width; width: 100%; position: relative; z-index: 10; border-bottom: 1px solid rgba(0,255,102,0.2); padding-bottom: 4px; margin-bottom: 2px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_6px_#10B981] inline-block" style="width: 8px; height: 8px; background-color: #00FF66; border-radius: 50%;"></span>
+          <span id="statusLabel" style="font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #00FF66; white-space: nowrap;">開始嘗試解密</span>
+        </div>
+        <div style="margin-left: auto;">
+          <span id="stateStepLabel" style="font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #00FF66; white-space: nowrap;" class="blinking-text">開始初始化</span>
+        </div>
+      </div>
+
+      <div class="card-header">
+        <span class="title-icon-badge badge-motive" id="iconBadge" aria-hidden="true"></span>
+        <span class="card-title" id="cardTitle"></span>
+      </div>
+
+      <div class="marquee-viewport" id="marqueeViewport">
+        <div class="marquee-track" id="marqueeTrack"></div>
+      </div>
+
+      <div class="final-content-view" id="finalContentView">
+        解密成功，歡迎進入 <span class="pop-highlight">哞哞的腦內世界</span>，準備解鎖全新的 2026 生活系統！
+      </div>
+
+      <div class="dots-nav" id="dotsNav">
+        <div class="dot active" data-index="0"></div>
+        <div class="dot" data-index="1"></div>
+        <div class="dot" data-index="2"></div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOPICS = [
+      {
+        title: "推測動機 // CLASSIFIED",
+        badgeClass: "badge-motive",
+        particleColor: "#FFB86C",
+        iconSvg: '<span style="font-size:12px;">[01]</span>',
+        segments: [
+          { text: "目標疑似 " },
+          { code: "做事沒有系統流程" },
+          { text: "，人生過於混亂，嚴重影響生活品質，因此報名訓練營想在 2026 年 " },
+          { code: "建立屬於自己的Life系統" },
+          { text: "，希望過上輕鬆卻充實的慵懶生活。" }
+        ]
+      },
+      {
+        title: "預期收益 // TARGET",
+        badgeClass: "badge-benefit",
+        particleColor: "#64FFDA",
+        iconSvg: '<span style="font-size:12px;">[02]</span>',
+        segments: [
+          { text: "目標預期在 Notion 訓練營結識智慧、有趣的人，" },
+          { code: "打破自我框架" },
+          { text: "，" },
+          { code: "拓寬眼界" },
+          { text: "，過上自己更喜歡的生活。" }
+        ]
+      },
+      {
+        title: "解密成功 // WELCOME",
+        badgeClass: "badge-final",
+        particleColor: "#FF6E6E",
+        iconSvg: '<span style="font-size:12px;">★</span>',
+        isFinal: true,
+        segments: [
+          { text: "🎉 " },
+          { code: "解密成功" },
+          { text: "，歡迎進入" },
+          { code: "哞哞的腦內世界" },
+          { text: "，準備解鎖全新的 2026 生活系統！" }
+        ]
+      }
+    ];
+
+    const widgetCard = document.getElementById('widgetCard');
+    const iconBadge = document.getElementById('iconBadge');
+    const cardTitle = document.getElementById('cardTitle');
+    const marqueeViewport = document.getElementById('marqueeViewport');
+    const marqueeTrack = document.getElementById('marqueeTrack');
+    const finalContentView = document.getElementById('finalContentView');
+    const dots = document.querySelectorAll('.dot');
+    const progressBar = document.getElementById('progressBar');
+    const statusLabel = document.getElementById('statusLabel');
+    const stateStepLabel = document.getElementById('stateStepLabel');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const dustCanvas = document.getElementById('dustCanvas');
+    const ctx = dustCanvas.getContext('2d');
+
+    const INITIAL_PAUSE_SEC = 1.0;
+    const SCROLL_SPEED = 28;
+
+    let currentIndex = 0;
+    let isPaused = false;
+    let isTransitioning = false;
+    let isFinished = false;
+    let pauseElapsed = 0;
+    let scrollX = 0;
+    let singleGroupWidth = 0;
+    let maxTriggerDistance = 0;
+    let lastTimestamp = null;
+    let particles = [];
+    
+    let topicScrollElapsed = 0;
+    let topicScrollDuration = 0;
+
+    function createCharSpans(text, targetContainer) {
+      for (const ch of text) {
+        const span = document.createElement('span');
+        span.className = 'frag-char';
+        span.textContent = ch === ' ' ? '\u00A0' : ch;
+        targetContainer.appendChild(span);
+      }
+    }
+
+    function buildMarqueeGroup(segments, isClone = false) {
+      const group = document.createElement('span');
+      group.className = 'marquee-item';
+      if (isClone) group.setAttribute('aria-hidden', 'true');
+
+      segments.forEach(seg => {
+        if (seg.code) {
+          const codeEl = document.createElement('code');
+          codeEl.className = 'notion-code';
+          createCharSpans(seg.code, codeEl);
+          group.appendChild(codeEl);
+        } else if (seg.text) {
+          createCharSpans(seg.text, group);
+        }
+      });
+      return group;
+    }
+
+    function recalculateScrollDistance() {
+      const firstGroup = marqueeTrack.querySelector('.marquee-item');
+      if (!firstGroup) return;
+      singleGroupWidth = firstGroup.getBoundingClientRect().width;
+      
+      if (currentIndex === 0) {
+        maxTriggerDistance = singleGroupWidth * 0.5;
+      } else {
+        maxTriggerDistance = singleGroupWidth;
+      }
+      topicScrollDuration = maxTriggerDistance / SCROLL_SPEED;
+    }
+
+    function updateHeaderStatus(pct) {
+      const topic = TOPICS[currentIndex];
+      if (topic.isFinal) {
+        statusLabel.textContent = '同步連線中';
+        stateStepLabel.textContent = '初始化完成';
+        stateStepLabel.classList.remove('blinking-text');
+      } else {
+        const displayPct = Math.min(100, Math.round(pct));
+        if (displayPct <= 2) {
+          statusLabel.textContent = currentIndex === 0 ? '開始嘗試解密' : '解密進度 50%';
+          stateStepLabel.textContent = currentIndex === 0 ? '開始初始化' : '解密中...';
+          stateStepLabel.classList.add('blinking-text');
+        } else {
+          statusLabel.textContent = '解密進度 ' + displayPct + '%';
+          stateStepLabel.textContent = '解密中...';
+          stateStepLabel.classList.add('blinking-text');
+        }
+      }
+    }
+
+    function renderTopic(index, assembleFromFragments = false) {
+      const topic = TOPICS[index];
+      currentIndex = index;
+
+      iconBadge.className = 'title-icon-badge ' + topic.badgeClass;
+      iconBadge.innerHTML = topic.iconSvg;
+      cardTitle.innerHTML = '';
+      createCharSpans(topic.title, cardTitle);
+
+      if (topic.isFinal) {
+        marqueeViewport.style.display = 'none';
+        finalContentView.style.display = 'block';
+        isFinished = true;
+      } else {
+        marqueeViewport.style.display = 'block';
+        finalContentView.style.display = 'none';
+        isFinished = false;
+        marqueeTrack.innerHTML = '';
+        marqueeTrack.appendChild(buildMarqueeGroup(topic.segments, false));
+        marqueeTrack.appendChild(buildMarqueeGroup(topic.segments, true));
+      }
+
+      pauseElapsed = 0;
+      scrollX = 0;
+      topicScrollElapsed = 0;
+      if (!topic.isFinal) {
+        marqueeTrack.style.transform = 'translate3d(0px, 0, 0)';
+        recalculateScrollDistance();
+      }
+
+      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
+
+      let basePct = 0;
+      if (currentIndex === 1) basePct = 50;
+      else if (currentIndex === 2) basePct = 100;
+      
+      progressBar.style.width = basePct + '%';
+      updateHeaderStatus(basePct);
+
+      if (assembleFromFragments) {
+        const targetQuery = topic.isFinal ? '.pop-highlight' : '.frag-char';
+        const chars = widgetCard.querySelectorAll(targetQuery);
+        iconBadge.style.transition = 'none';
+        iconBadge.style.opacity = '0';
+        iconBadge.style.transform = 'scale(0.3)';
+
+        chars.forEach(span => {
+          const rx = (Math.random() - 0.5) * 80;
+          const ry = (Math.random() - 0.5) * 40;
+          span.style.transition = 'none';
+          span.style.opacity = '0';
+          span.style.filter = 'blur(4px)';
+          span.style.transform = 'translate(' + rx + 'px, ' + ry + 'px) scale(0.2)';
+        });
+
+        void widgetCard.offsetWidth;
+
+        iconBadge.style.transition = 'all 0.4s ease';
+        iconBadge.style.opacity = '1';
+        iconBadge.style.transform = 'scale(1)';
+
+        chars.forEach(span => {
+          const delay = Math.random() * 120;
+          span.style.transition = 'transform 0.5s cubic-bezier(0, 1, 0.5, 1) ' + delay + 'ms, opacity 0.4s ease ' + delay + 'ms, filter 0.4s ease ' + delay + 'ms';
+          span.style.opacity = '1';
+          span.style.filter = 'blur(0px)';
+          span.style.transform = 'translate(0px, 0px) scale(1)';
+        });
+
+        setTimeout(() => {
+          widgetCard.classList.remove('is-shattering');
+          isTransitioning = false;
+        }, 600);
+      }
+    }
+
+    function spawnDustParticles(color) {
+      const rect = widgetCard.getBoundingClientRect();
+      dustCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      dustCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+      particles = [];
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: 20 + Math.random() * (rect.width - 40),
+          y: 20 + Math.random() * (rect.height - 30),
+          vx: (Math.random() - 0.4) * 2.2,
+          vy: (Math.random() - 0.5) * 1.8,
+          size: 1.2 + Math.random() * 2,
+          alpha: 0.9,
+          decay: 0.02 + Math.random() * 0.015,
+          color: Math.random() > 0.3 ? color : '#00FF66'
+        });
+      }
+    }
+
+    function triggerFragmentTransition() {
+      if (isTransitioning || isFinished) return;
+      isTransitioning = true;
+      const nextIndex = currentIndex + 1;
+
+      if (nextIndex >= TOPICS.length) {
+        isFinished = true;
+        isTransitioning = false;
+        return;
+      }
+
+      widgetCard.classList.add('is-shattering');
+      spawnDustParticles(TOPICS[currentIndex].particleColor);
+
+      const chars = widgetCard.querySelectorAll('.frag-char');
+      chars.forEach(span => {
+        const delay = Math.random() * 100;
+        const dx = (Math.random() - 0.5) * 70;
+        const dy = (Math.random() - 0.5) * 50;
+        span.style.transition = 'transform 0.45s ease-out ' + delay + 'ms, opacity 0.4s ease ' + delay + 'ms, filter 0.4s ease ' + delay + 'ms';
+        span.style.opacity = '0';
+        span.style.filter = 'blur(4px)';
+        span.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(0.2)';
+      });
+
+      setTimeout(() => {
+        renderTopic(nextIndex, true);
+        if (TOPICS[nextIndex].isFinal) {
+          isFinished = true;
+          progressBar.style.width = '100%';
+        }
+      }, 550);
+    }
+
+    function animationLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      if (particles.length > 0) {
+        ctx.clearRect(0, 0, dustCanvas.width, dustCanvas.height);
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      if (!isPaused && !isTransitioning && !isFinished && singleGroupWidth > 0 && maxTriggerDistance > 0) {
+        if (pauseElapsed < INITIAL_PAUSE_SEC) {
+          pauseElapsed += dt;
+        } else {
+          scrollX += SCROLL_SPEED * dt;
+          topicScrollElapsed += dt;
+          marqueeTrack.style.transform = 'translate3d(-' + Math.min(maxTriggerDistance, scrollX) + 'px, 0, 0)';
+          
+          const topicProgress = Math.min(1, topicScrollElapsed / topicScrollDuration);
+          let currentGlobalPct = 0;
+
+          if (currentIndex === 0) {
+            currentGlobalPct = topicProgress * 50;
+          } else if (currentIndex === 1) {
+            currentGlobalPct = 50 + (topicProgress * 50);
+          }
+
+          progressBar.style.width = currentGlobalPct + '%';
+          updateHeaderStatus(currentGlobalPct);
+        }
+
+        if (scrollX >= maxTriggerDistance) {
+          triggerFragmentTransition();
+        }
+      }
+
+      requestAnimationFrame(animationLoop);
+    }
+
+    renderTopic(0, false);
+    requestAnimationFrame(animationLoop);
+
+    widgetCard.addEventListener('mouseenter', () => { isPaused = true; });
+    widgetCard.addEventListener('mouseleave', () => { isPaused = false; });
+    widgetCard.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('dot') && !isFinished) triggerFragmentTransition();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      isFinished = false;
+      renderTopic(0, true);
+    });
+
+    themeToggleBtn.addEventListener('click', () => {
+      const body = document.body;
+      if (body.classList.contains('force-dark')) {
+        body.classList.remove('force-dark');
+        body.classList.add('force-light');
+      } else if (body.classList.contains('force-light')) {
+        body.classList.remove('force-light');
+      } else {
+        body.classList.add('force-dark');
+      }
+    });
+
+    window.addEventListener('resize', () => recalculateScrollDistance());
+  </script>
+</body>
+</html>
